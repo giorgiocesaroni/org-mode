@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import getParsed from "./api/getParsed";
+import getStringify from "./api/getStringify";
 
 function App() {
    const [text, setText] = useState(localStorage.getItem("text") ?? "");
@@ -19,16 +20,19 @@ function App() {
       setParsed(body);
    }
 
+   async function handleTreeChange() {
+      const res = await getStringify(rootRef.current);
+      const body = await res.text();
+      setText(body);
+   }
+
    return (
       <main className="border p-4 grid grid-cols-2 gap-2">
          <TextArea
             value={text}
             onChange={event => setText(event.target.value)}
          />
-         <Visualizer
-            root={rootRef.current}
-            onChange={() => console.log("Changed", rootRef.current)}
-         />
+         <Visualizer root={rootRef.current} onChange={handleTreeChange} />
       </main>
    );
 }
