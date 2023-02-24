@@ -27,7 +27,7 @@ function App() {
    }
 
    return (
-      <main className="border p-4 grid grid-cols-2 gap-2">
+      <main className="border p-4 grid grid-cols-2 gap-2 h-full">
          <TextArea
             value={text}
             onChange={event => setText(event.target.value)}
@@ -50,6 +50,8 @@ function TextArea({ value, onChange }) {
 function Visualizer({ root, onChange }) {
    if (!root) return;
 
+   console.log(root);
+
    function handleTaskChange() {
       if (root.tag === "TODO") {
          root.tag = "DONE";
@@ -63,8 +65,10 @@ function Visualizer({ root, onChange }) {
    return (
       <div className="border p-2">
          <Task tag={root.tag} onChange={handleTaskChange} />
+         <Schedule schedule={root.schedule} />
+         <Deadline deadline={root.deadline} />
          <h1>{root.tagText}</h1>
-         <p className="mb-4">{root.text}</p>
+         <p className="mb-4 whitespace-pre-wrap">{root.text}</p>
          {root.children?.map(child => (
             <Visualizer root={child} onChange={onChange} />
          ))}
@@ -79,6 +83,48 @@ function Task({ tag, onChange }) {
       <div className="flex gap-2">
          <input type="checkbox" checked={tag === "DONE"} onClick={onChange} />
          <p>{tag}</p>
+      </div>
+   );
+}
+
+function Schedule({ schedule }) {
+   if (!schedule) return;
+
+   const date = schedule ? new Date(schedule) : new Date();
+
+   return (
+      <div className="border">
+         <p>Scheduled</p>
+         <input type="date" value={dateForPicker(date)} />
+         <input type="time" value={timeForPicker(date)} />
+      </div>
+   );
+}
+
+function pad(string) {
+   return String(string).padStart(2, "0");
+}
+
+function dateForPicker(date) {
+   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+   )}`;
+}
+
+function timeForPicker(date) {
+   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function Deadline({ deadline }) {
+   const date = deadline ? new Date(deadline) : new Date();
+
+   console.log(timeForPicker(date));
+
+   return (
+      <div className="border">
+         <p>Deadline</p>
+         <input type="date" value={dateForPicker(date)} />
+         <input type="time" value={timeForPicker(date)} />
       </div>
    );
 }
