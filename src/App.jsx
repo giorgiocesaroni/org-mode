@@ -62,11 +62,23 @@ function Visualizer({ root, onChange }) {
       onChange();
    }
 
+   function handleScheduleChange(event) {
+      const date = new Date(event.target.value);
+      root.schedule = date;
+      onChange();
+   }
+
+   function handleDeadlineChange(event) {
+      const date = new Date(event.target.value);
+      root.deadline = date;
+      onChange();
+   }
+
    return (
       <div className="border p-2">
          <Task tag={root.tag} onChange={handleTaskChange} />
-         <Schedule schedule={root.schedule} />
-         <Deadline deadline={root.deadline} />
+         <Schedule schedule={root.schedule} onChange={handleScheduleChange} />
+         <Deadline deadline={root.deadline} onChange={handleDeadlineChange} />
          <h1>{root.tagText}</h1>
          <p className="mb-4 whitespace-pre-wrap">{root.text}</p>
          {root.children?.map(child => (
@@ -87,7 +99,7 @@ function Task({ tag, onChange }) {
    );
 }
 
-function Schedule({ schedule }) {
+function Schedule({ schedule, onChange }) {
    if (!schedule) return;
 
    const date = schedule ? new Date(schedule) : new Date();
@@ -95,7 +107,19 @@ function Schedule({ schedule }) {
    return (
       <div className="border">
          <p>Scheduled</p>
-         <input type="date" value={dateForPicker(date)} />
+         <input type="date" value={dateForPicker(date)} onChange={onChange} />
+         <input type="time" value={timeForPicker(date)} />
+      </div>
+   );
+}
+
+function Deadline({ deadline, onChange }) {
+   const date = deadline ? new Date(deadline) : new Date();
+
+   return (
+      <div className="border">
+         <p>Deadline</p>
+         <input type="date" value={dateForPicker(date)} onChange={onChange} />
          <input type="time" value={timeForPicker(date)} />
       </div>
    );
@@ -113,20 +137,6 @@ function dateForPicker(date) {
 
 function timeForPicker(date) {
    return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function Deadline({ deadline }) {
-   const date = deadline ? new Date(deadline) : new Date();
-
-   console.log(timeForPicker(date));
-
-   return (
-      <div className="border">
-         <p>Deadline</p>
-         <input type="date" value={dateForPicker(date)} />
-         <input type="time" value={timeForPicker(date)} />
-      </div>
-   );
 }
 
 export default App;
