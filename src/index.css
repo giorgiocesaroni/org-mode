@@ -8,4 +8,10 @@ body,
    height: 100%;
 }
 
+input {
+   background: inherit;
+}
 
+* {
+   transition: background .25s;
+}

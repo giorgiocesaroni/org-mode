@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import getParsed from "./api/getParsed";
 import getStringify from "./api/getStringify";
+import { timeForPicker } from "./utils/timeForPicker";
+import { dateForPicker } from "./utils/dateForPicker";
 
 function App() {
    const [text, setText] = useState(localStorage.getItem("text") ?? "");
@@ -40,17 +42,17 @@ function App() {
 function TextArea({ value, onChange }) {
    return (
       <textarea
-         className="border bg-slate p-2"
+         className="border bg-slate p-2 h-full"
          value={value}
          onChange={onChange}
       />
    );
 }
 
-function Visualizer({ root, onChange }) {
+function Visualizer({ root, parent, onChange }) {
    if (!root) return;
 
-   console.log(root);
+   let childTags = root.children?.map(child => child.tag);
 
    function handleTaskChange() {
       if (root.tag === "TODO") {
@@ -58,7 +60,6 @@ function Visualizer({ root, onChange }) {
       } else {
          root.tag = "TODO";
       }
-
       onChange();
    }
 
@@ -75,26 +76,51 @@ function Visualizer({ root, onChange }) {
    }
 
    return (
-      <div className="border p-2">
-         <Task tag={root.tag} onChange={handleTaskChange} />
+      <div
+         className={`flex flex-col gap-2 border p-2 rounded-2xl ${
+            root.tag === "DONE"
+               ? "bg-gray-100 text-gray-500"
+               : "bg-white text-gray-900"
+         }`}
+      >
+         {root.tag !== "ROOT" && (
+            <header className="flex gap-2 mb-2 font-bold">
+               <Task
+                  disabled={
+                     childTags?.includes("TODO") || parent.tag === "DONE"
+                  }
+                  tag={root.tag}
+                  onChange={handleTaskChange}
+               />
+               <h1>{root.tagText}</h1>
+            </header>
+         )}
          <Schedule schedule={root.schedule} onChange={handleScheduleChange} />
          <Deadline deadline={root.deadline} onChange={handleDeadlineChange} />
-         <h1>{root.tagText}</h1>
-         <p className="mb-4 whitespace-pre-wrap">{root.text}</p>
+         {root.text?.trim() && (
+            <p className="mb-4 whitespace-pre-wrap text-gray-500">
+               {root.text?.trim()}
+            </p>
+         )}
          {root.children?.map(child => (
-            <Visualizer root={child} onChange={onChange} />
+            <Visualizer root={child} parent={root} onChange={onChange} />
          ))}
       </div>
    );
 }
 
-function Task({ tag, onChange }) {
+function Task({ tag, onChange, disabled }) {
    if (!["DONE", "TODO"].includes(tag)) return;
 
    return (
       <div className="flex gap-2">
-         <input type="checkbox" checked={tag === "DONE"} onClick={onChange} />
-         <p>{tag}</p>
+         <input
+            disabled={disabled}
+            type="checkbox"
+            checked={tag === "DONE"}
+            onClick={onChange}
+         />
+         {/* <p>{tag}</p> */}
       </div>
    );
 }
@@ -105,7 +131,7 @@ function Schedule({ schedule, onChange }) {
    const date = schedule ? new Date(schedule) : new Date();
 
    return (
-      <div className="border">
+      <div className="">
          <p>Scheduled</p>
          <input type="date" value={dateForPicker(date)} onChange={onChange} />
          <input type="time" value={timeForPicker(date)} />
@@ -114,29 +140,17 @@ function Schedule({ schedule, onChange }) {
 }
 
 function Deadline({ deadline, onChange }) {
+   if (!deadline) return;
+
    const date = deadline ? new Date(deadline) : new Date();
 
    return (
-      <div className="border">
+      <div className="">
          <p>Deadline</p>
          <input type="date" value={dateForPicker(date)} onChange={onChange} />
          <input type="time" value={timeForPicker(date)} />
       </div>
    );
-}
-
-function pad(string) {
-   return String(string).padStart(2, "0");
-}
-
-function dateForPicker(date) {
-   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-      date.getDate()
-   )}`;
-}
-
-function timeForPicker(date) {
-   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export default App;
