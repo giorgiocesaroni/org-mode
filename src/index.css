@@ -13,5 +13,11 @@ input {
 }
 
 * {
-   transition: background .25s;
+   transition: opacity 0.25s, background-color 0.25s, border 0.25s,
+      box-shadow 0.25s;
+}
+
+input[type="checkbox"] {
+   outline: none;
+   padding: 2rem;
 }

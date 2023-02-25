@@ -52,7 +52,9 @@ function TextArea({ value, onChange }) {
 function Visualizer({ root, parent, onChange }) {
    if (!root) return;
 
+   let todo = root.tag === "TODO";
    let childTags = root.children?.map(child => child.tag);
+   let hasTodos = childTags?.includes("TODO");
 
    function handleTaskChange() {
       if (root.tag === "TODO") {
@@ -75,24 +77,32 @@ function Visualizer({ root, parent, onChange }) {
       onChange();
    }
 
+   let rootStyle = "bg-white text-gray-900";
+   let headerTextStyle = "";
+
+   let disabled = root.tag === "DONE" || hasTodos;
+
+   if (disabled) {
+      rootStyle = "bg-gray-100";
+      headerTextStyle = "opacity-50";
+   } else if (todo) {
+      rootStyle = "border-orange-400 bg-white shadow";
+   }
+
    return (
       <div
-         className={`flex flex-col gap-2 border p-2 rounded-2xl ${
-            root.tag === "DONE"
-               ? "bg-gray-100 text-gray-500"
-               : "bg-white text-gray-900"
-         }`}
+         className={`flex border-2 flex-col gap-2 p-3 rounded-2xl ${rootStyle}`}
       >
          {root.tag !== "ROOT" && (
-            <header className="flex gap-2 mb-2 font-bold">
+            <header
+               onClick={handleTaskChange}
+               className="flex items-center gap-2 font-bold text-xl"
+            >
                <Task
-                  disabled={
-                     childTags?.includes("TODO") || parent.tag === "DONE"
-                  }
+                  disabled={hasTodos || parent?.tag === "DONE"}
                   tag={root.tag}
-                  onChange={handleTaskChange}
                />
-               <h1>{root.tagText}</h1>
+               <h1 class={headerTextStyle}>{root.tagText}</h1>
             </header>
          )}
          <Schedule schedule={root.schedule} onChange={handleScheduleChange} />
@@ -113,15 +123,11 @@ function Task({ tag, onChange, disabled }) {
    if (!["DONE", "TODO"].includes(tag)) return;
 
    return (
-      <div className="flex gap-2">
-         <input
-            disabled={disabled}
-            type="checkbox"
-            checked={tag === "DONE"}
-            onClick={onChange}
-         />
-         {/* <p>{tag}</p> */}
-      </div>
+      <Checkbox
+         disabled={disabled}
+         checked={tag === "DONE"}
+         onClick={onChange}
+      />
    );
 }
 
@@ -131,10 +137,16 @@ function Schedule({ schedule, onChange }) {
    const date = schedule ? new Date(schedule) : new Date();
 
    return (
-      <div className="">
+      <div className="text-gray-500 mb-2 flex flex-col">
          <p>Scheduled</p>
-         <input type="date" value={dateForPicker(date)} onChange={onChange} />
-         <input type="time" value={timeForPicker(date)} />
+         <div className="flex gap-2">
+            <input
+               type="date"
+               value={dateForPicker(date)}
+               onChange={onChange}
+            />
+            <input type="time" value={timeForPicker(date)} />
+         </div>
       </div>
    );
 }
@@ -145,10 +157,41 @@ function Deadline({ deadline, onChange }) {
    const date = deadline ? new Date(deadline) : new Date();
 
    return (
-      <div className="">
+      <div className="text-gray-500 mb-2 flex flex-col">
          <p>Deadline</p>
-         <input type="date" value={dateForPicker(date)} onChange={onChange} />
-         <input type="time" value={timeForPicker(date)} />
+         <div className="flex gap-2">
+            <input
+               type="date"
+               value={dateForPicker(date)}
+               onChange={onChange}
+            />
+            <input type="time" value={timeForPicker(date)} />
+         </div>
+      </div>
+   );
+}
+
+function Checkbox({ disabled, checked, onClick }) {
+   let checkboxStyle = "opacity-100";
+
+   if (disabled) {
+      checkboxStyle = "opacity-30";
+   }
+
+   return (
+      <div
+         onClick={!disabled ? onClick : null}
+         className="flex relative w-5 h-5"
+      >
+         <div
+            className={`border-2 border-gray-500 absolute top-0 left-0 rounded-full w-5 h-5 grid place-items-center ${checkboxStyle}`}
+         >
+            <div
+               className={`w-2.5 h-2.5 rounded-full bg-gray-500 ${
+                  !checked ? "opacity-0" : "opacity-100"
+               }`}
+            />
+         </div>
       </div>
    );
 }
