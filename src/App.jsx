@@ -77,7 +77,11 @@ function Visualizer({ root, parent, onChange }) {
 }
 
 function Text({ children }) {
-   return <p className="text-gray-500 pb-4">{children.trim()}</p>;
+   return (
+      <p className="text-gray-500 pb-4 whitespace-pre-line">
+         {children.trim()}
+      </p>
+   );
 }
 
 function TextArea({ value, onChange }) {
@@ -104,6 +108,8 @@ function Root({ root, onChange }) {
 }
 
 function Document({ root, onChange }) {
+   const [open, setOpen] = useState(true);
+
    let childTags = root.children?.map(child => child.tag);
    let activeNestedTasks = childTags?.filter(
       childTag => childTag === "TODO" || childTag === "DONE"
@@ -115,22 +121,38 @@ function Document({ root, onChange }) {
 
    return (
       <div className="bg-white border-2 grid gap-2 p-3 rounded-xl">
-         <div className="flex gap-2 items-center">
-            <h1 className="font-bold text-xl">{root.tagText}</h1>
+         <div className="flex gap-2 items-center justify-between">
+            <h1
+               onClick={() => setOpen(prev => !prev)}
+               className="font-bold text-xl"
+            >
+               {root.tagText}
+            </h1>
             {completionPercentage < 100 && (
                <Completion value={completionPercentage} />
             )}
          </div>
-         {root.text && <Text>{root.text}</Text>}
-         {root?.children &&
-            root.children.map(child => (
-               <Visualizer root={child} parent={root} onChange={onChange} />
-            ))}
+
+         {open && (
+            <div>
+               {root.text && <Text>{root.text}</Text>}
+               {root?.children &&
+                  root.children.map(child => (
+                     <Visualizer
+                        root={child}
+                        parent={root}
+                        onChange={onChange}
+                     />
+                  ))}
+            </div>
+         )}
       </div>
    );
 }
 
 function Task({ root, onChange }) {
+   const [open, setOpen] = useState(true);
+
    let todo = root.tag === "TODO";
    let done = root.tag === "DONE";
 
@@ -172,42 +194,55 @@ function Task({ root, onChange }) {
             todo && "border-orange-500 shadow-sm"
          }`}
       >
-         <div className="flex gap-2 items-center">
+         <div className="flex gap-2 items-center justify-between">
             <div className="flex gap-2 items-center">
                <Checkbox checked={done} onClick={toggleStatus} />
-               <h1 className="font-bold text-lg break-words">{root.tagText}</h1>
+               <h1
+                  onClick={() => setOpen(prev => !prev)}
+                  className="font-bold text-lg"
+               >
+                  {root.tagText}
+               </h1>
             </div>
             {completionPercentage < 100 && (
                <Completion value={completionPercentage} />
             )}
          </div>
 
-         {(root.schedule || root.deadline) && (
-            <div className="grid gap-2 grid-cols-2">
-               {root.schedule && (
-                  <Schedule
-                     disabled={done}
-                     schedule={root.schedule}
-                     onChange={handleScheduleChange}
-                  />
+         {open && (
+            <div>
+               {(root.schedule || root.deadline) && (
+                  <div className="grid gap-2 grid-cols-2">
+                     {root.schedule && (
+                        <Schedule
+                           disabled={done}
+                           schedule={root.schedule}
+                           onChange={handleScheduleChange}
+                        />
+                     )}
+
+                     {root.deadline && (
+                        <Deadline
+                           disabled={done}
+                           deadline={root.deadline}
+                           onChange={handleDeadlineChange}
+                        />
+                     )}
+                  </div>
                )}
 
-               {root.deadline && (
-                  <Deadline
-                     disabled={done}
-                     deadline={root.deadline}
-                     onChange={handleDeadlineChange}
-                  />
-               )}
+               {root.text?.trim() && <Text>{root.text}</Text>}
+
+               {root?.children &&
+                  root.children.map(child => (
+                     <Visualizer
+                        root={child}
+                        parent={root}
+                        onChange={onChange}
+                     />
+                  ))}
             </div>
          )}
-
-         {root.text?.trim() && <Text>{root.text}</Text>}
-
-         {root?.children &&
-            root.children.map(child => (
-               <Visualizer root={child} parent={root} onChange={onChange} />
-            ))}
       </div>
    );
 }
