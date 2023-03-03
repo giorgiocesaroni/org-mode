@@ -5,7 +5,7 @@
 html,
 body,
 #root {
-   height: 100%;
+   background: rgb(108, 114, 127);
 }
 
 input {
@@ -20,4 +20,11 @@ input {
 input[type="checkbox"] {
    outline: none;
    padding: 2rem;
+}
+
+/* Hide Calendar Icon In Chrome */
+input[type="datetime-local"]::-webkit-inner-spin-button,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+   display: none;
+   -webkit-appearance: none;
 }

@@ -3,6 +3,7 @@ import getParsed from "./api/getParsed";
 import getStringify from "./api/getStringify";
 import { timeForPicker } from "./utils/timeForPicker";
 import { dateForPicker } from "./utils/dateForPicker";
+import { remainingDays } from "./utils/remainingDays";
 
 function App() {
    const [text, setText] = useState(localStorage.getItem("text") ?? "");
@@ -10,53 +11,127 @@ function App() {
    const rootRef = useRef({});
 
    useEffect(() => {
-      if (!text) return setParsed(null);
+      // if (!text) return setParsed(null);
       handleParsing(text);
       localStorage.setItem("text", text ?? "");
    }, [text]);
 
    async function handleParsing(text) {
-      const res = await getParsed(text);
-      const body = await res.json();
+      const body = getParsed(text);
       rootRef.current = body;
       setParsed(body);
    }
 
    async function handleTreeChange() {
-      const res = await getStringify(rootRef.current);
-      const body = await res.text();
+      const body = getStringify(rootRef.current);
       setText(body);
    }
 
    return (
-      <main className="border p-4 grid grid-cols-2 gap-2 h-full">
-         <TextArea
-            value={text}
-            onChange={event => setText(event.target.value)}
-         />
-         <Visualizer root={rootRef.current} onChange={handleTreeChange} />
-      </main>
+      <div className="pb-4 max-w-lg mx-auto">
+         <h1 className="text-white font-bold text-lg p-4 pt-2">
+            {new Date().toLocaleDateString()}
+         </h1>
+         <main className="bg-gray-500 p-4 flex flex-col gap-6">
+            <TextArea
+               value={text}
+               onChange={event => setText(event.target.value)}
+            />
+            {text && (
+               <Visualizer root={rootRef.current} onChange={handleTreeChange} />
+            )}
+         </main>
+      </div>
+   );
+}
+
+const componentsMap = [
+   {
+      description: "Document",
+      match: root => ["HEADER"].includes(root.tag),
+      component: Document,
+   },
+   {
+      description: "Task",
+      match: root => ["TODO", "DONE"].includes(root.tag),
+      component: Task,
+   },
+   {
+      description: "Root",
+      match: root => ["ROOT"].includes(root.tag),
+      component: Root,
+   },
+   {
+      description: "Not found",
+      match: () => true,
+      component: Document,
+   },
+];
+
+function Visualizer({ root, parent, onChange }) {
+   let Component = componentsMap.find(el => el.match(root))?.component;
+
+   return (
+      Component && <Component root={root} parent={parent} onChange={onChange} />
+   );
+}
+
+function Text({ children }) {
+   return (
+      <p className="whitespace-pre text-gray-500 pb-4">{children.trim()}</p>
    );
 }
 
 function TextArea({ value, onChange }) {
    return (
       <textarea
-         className="border bg-slate p-2 h-full"
+         className="min-h-[10rem] min-w-[20rem] resize-y outline-none caret-gray-50 bg-gray-500 h-full text-gray-50"
          value={value}
          onChange={onChange}
+         placeholder="Start typing..."
       />
    );
 }
 
-function Visualizer({ root, parent, onChange }) {
-   if (!root) return;
+function Root({ root, onChange }) {
+   return (
+      <div className="flex-1  bg-gray-200 rounded-lg shadow-sm px-3 py-4 grid gap-6">
+         {root.text && <Text>{root.text}</Text>}
+         {root.children &&
+            root?.children.map(child => (
+               <Visualizer root={child} parent={root} onChange={onChange} />
+            ))}
+      </div>
+   );
+}
 
+function Document({ root, onChange }) {
+   return (
+      <div className="bg-white border-2 grid gap-2 p-3 rounded-xl">
+         <h1 className="font-bold text-xl">{root.tagText}</h1>
+         {root.text && <Text>{root.text}</Text>}
+         {root?.children &&
+            root.children.map(child => (
+               <Visualizer root={child} parent={root} onChange={onChange} />
+            ))}
+      </div>
+   );
+}
+
+function Task({ root, onChange }) {
    let todo = root.tag === "TODO";
-   let childTags = root.children?.map(child => child.tag);
-   let hasTodos = childTags?.includes("TODO");
+   let done = root.tag === "DONE";
 
-   function handleTaskChange() {
+   let childTags = root.children?.map(child => child.tag);
+   let activeNestedTasks = childTags?.filter(
+      childTag => childTag === "TODO" || childTag === "DONE"
+   );
+   let activeNestedDone = childTags?.filter(childTag => childTag === "DONE");
+   let completionPercentage = Math.round(
+      (activeNestedDone?.length / activeNestedTasks?.length) * 100
+   );
+
+   function toggleStatus() {
       if (root.tag === "TODO") {
          root.tag = "DONE";
       } else {
@@ -67,107 +142,128 @@ function Visualizer({ root, parent, onChange }) {
 
    function handleScheduleChange(event) {
       const date = new Date(event.target.value);
+      if (isNaN(date)) return;
       root.schedule = date;
       onChange();
    }
 
    function handleDeadlineChange(event) {
       const date = new Date(event.target.value);
+      if (isNaN(date)) return;
       root.deadline = date;
       onChange();
    }
 
-   let rootStyle = "bg-white text-gray-900";
-   let headerTextStyle = "";
-
-   let disabled = root.tag === "DONE" || hasTodos;
-
-   if (disabled) {
-      rootStyle = "bg-gray-100";
-      headerTextStyle = "opacity-50";
-   } else if (todo) {
-      rootStyle = "border-orange-400 bg-white shadow";
-   }
-
    return (
       <div
-         className={`flex border-2 flex-col gap-2 p-3 rounded-2xl ${rootStyle}`}
+         className={`bg-white grid gap-2 border-2 p-2 rounded-xl ${
+            todo && "border-orange-500 shadow-sm"
+         }`}
       >
-         {root.tag !== "ROOT" && (
-            <header
-               onClick={handleTaskChange}
-               className="flex items-center gap-2 font-bold text-xl"
-            >
-               <Task
-                  disabled={hasTodos || parent?.tag === "DONE"}
-                  tag={root.tag}
-               />
-               <h1 class={headerTextStyle}>{root.tagText}</h1>
-            </header>
+         <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center" onClick={toggleStatus}>
+               <Checkbox checked={done} />
+               <h1 className="font-bold text-lg break-words">{root.tagText}</h1>
+            </div>
+            {completionPercentage < 100 && (
+               <Completion value={completionPercentage} />
+            )}
+         </div>
+
+         {(root.schedule || root.deadline) && (
+            <div className="grid gap-2 grid-cols-2">
+               {root.schedule && (
+                  <Schedule
+                     disabled={done}
+                     schedule={root.schedule}
+                     onChange={handleScheduleChange}
+                  />
+               )}
+
+               {root.deadline && (
+                  <Deadline
+                     disabled={done}
+                     deadline={root.deadline}
+                     onChange={handleDeadlineChange}
+                  />
+               )}
+            </div>
          )}
-         <Schedule schedule={root.schedule} onChange={handleScheduleChange} />
-         <Deadline deadline={root.deadline} onChange={handleDeadlineChange} />
-         {root.text?.trim() && (
-            <p className="mb-4 whitespace-pre-wrap text-gray-500">
-               {root.text?.trim()}
-            </p>
-         )}
-         {root.children?.map(child => (
-            <Visualizer root={child} parent={root} onChange={onChange} />
-         ))}
+
+         {root.text?.trim() && <Text>{root.text}</Text>}
+
+         {root?.children &&
+            root.children.map(child => (
+               <Visualizer root={child} parent={root} onChange={onChange} />
+            ))}
       </div>
    );
 }
 
-function Task({ tag, onChange, disabled }) {
-   if (!["DONE", "TODO"].includes(tag)) return;
+function Completion({ value }) {
+   return (
+      <div>
+         {!isNaN(value) && (
+            <span className="border-2 rounded-xl text-gray-500 px-2">
+               {value}%
+            </span>
+         )}
+      </div>
+   );
+}
+
+function DateTime({
+   date,
+   title = "Time and date",
+   onChange,
+   className = "bg-blue-500",
+   disabled,
+}) {
+   return (
+      <div className="text-xs rounded-lg overflow-hidden text-white shadow-sm">
+         <div
+            style={{ height: "100%" }}
+            className={disabled ? "bg-gray-400" : className}
+         >
+            <div className="px-2 py-1">
+               <p className="font-bold">{title}</p>
+               <input
+                  className="text-[.65rem]"
+                  type="datetime-local"
+                  value={dateForPicker(date)}
+                  onChange={onChange}
+               />
+            </div>
+         </div>
+      </div>
+   );
+}
+
+function Schedule({ schedule, onChange, disabled }) {
+   const date = schedule ? new Date(schedule) : new Date();
 
    return (
-      <Checkbox
+      <DateTime
          disabled={disabled}
-         checked={tag === "DONE"}
-         onClick={onChange}
+         title="Scheduled"
+         date={date}
+         onChange={onChange}
       />
    );
 }
 
-function Schedule({ schedule, onChange }) {
-   if (!schedule) return;
-
-   const date = schedule ? new Date(schedule) : new Date();
-
-   return (
-      <div className="text-gray-500 mb-2 flex flex-col">
-         <p>Scheduled</p>
-         <div className="flex gap-2">
-            <input
-               type="date"
-               value={dateForPicker(date)}
-               onChange={onChange}
-            />
-            <input type="time" value={timeForPicker(date)} />
-         </div>
-      </div>
-   );
-}
-
-function Deadline({ deadline, onChange }) {
-   if (!deadline) return;
-
+function Deadline({ deadline, onChange, disabled }) {
    const date = deadline ? new Date(deadline) : new Date();
+   const daysLeft = remainingDays(deadline);
 
    return (
-      <div className="text-gray-500 mb-2 flex flex-col">
-         <p>Deadline</p>
-         <div className="flex gap-2">
-            <input
-               type="date"
-               value={dateForPicker(date)}
-               onChange={onChange}
-            />
-            <input type="time" value={timeForPicker(date)} />
-         </div>
-      </div>
+      <DateTime
+         disabled={disabled}
+         title={`Deadline${daysLeft >= 0 ? ` in ${daysLeft} days` : ""}`}
+         className="bg-orange-500"
+         date={date}
+         onChange={onChange}
+      />
    );
 }
 
@@ -184,10 +280,10 @@ function Checkbox({ disabled, checked, onClick }) {
          className="flex relative w-5 h-5"
       >
          <div
-            className={`border-2 border-gray-500 absolute top-0 left-0 rounded-full w-5 h-5 grid place-items-center ${checkboxStyle}`}
+            className={`border-2 border-orange-500 absolute top-0 left-0 rounded-full w-5 h-5 grid place-items-center ${checkboxStyle}`}
          >
             <div
-               className={`w-2.5 h-2.5 rounded-full bg-gray-500 ${
+               className={`w-2.5 h-2.5 rounded-full bg-orange-500 ${
                   !checked ? "opacity-0" : "opacity-100"
                }`}
             />

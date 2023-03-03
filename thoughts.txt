@@ -1,0 +1,39 @@
+Visualizer
+
+-----
+
+What types of visualizers should I have?
+
+1. Header (when it's just "*** Something").
+This should be white as well?
+
+2. Todo (when it's "*** TODO Something").
+Done todo's should be gray.
+
+-----
+
+How should I structure the decision process of these visualizers?
+
+A map between tags and components (visualizers).
+
+-----
+
+What are the common parts between visualizers?
+
+1. A header
+
+2. A scheduling
+ 
+3. A body
+
+4. A footer? (maybe the "add new" button)
+
+-----
+
+Why is this project important
+
+1. It showcases the knowledge of recursive structures.
+
+2. It showcases parsing algorithms.
+
+3. It helps getting closer to Org Mode, which has a steep learning curve.
