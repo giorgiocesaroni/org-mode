@@ -134,7 +134,7 @@ function Document({ root, onChange }) {
          </div>
 
          {open && (
-            <div>
+            <div className="grid gap-2">
                {root.text && <Text>{root.text}</Text>}
                {root?.children &&
                   root.children.map(child => (
@@ -210,7 +210,7 @@ function Task({ root, onChange }) {
          </div>
 
          {open && (
-            <div>
+            <div className="grid gap-2">
                {(root.schedule || root.deadline) && (
                   <div className="grid gap-2 grid-cols-2">
                      {root.schedule && (
