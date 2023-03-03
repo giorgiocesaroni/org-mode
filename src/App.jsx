@@ -77,9 +77,7 @@ function Visualizer({ root, parent, onChange }) {
 }
 
 function Text({ children }) {
-   return (
-      <p className="whitespace-pre text-gray-500 pb-4">{children.trim()}</p>
-   );
+   return <p className="text-gray-500 pb-4">{children.trim()}</p>;
 }
 
 function TextArea({ value, onChange }) {
@@ -95,7 +93,7 @@ function TextArea({ value, onChange }) {
 
 function Root({ root, onChange }) {
    return (
-      <div className="flex-1  bg-gray-200 rounded-lg shadow-sm px-3 py-4 grid gap-6">
+      <div className="flex-1 bg-gray-200 rounded-lg shadow-sm px-3 py-4 grid gap-6 pb-6">
          {root.text && <Text>{root.text}</Text>}
          {root.children &&
             root?.children.map(child => (
@@ -106,9 +104,23 @@ function Root({ root, onChange }) {
 }
 
 function Document({ root, onChange }) {
+   let childTags = root.children?.map(child => child.tag);
+   let activeNestedTasks = childTags?.filter(
+      childTag => childTag === "TODO" || childTag === "DONE"
+   );
+   let activeNestedDone = childTags?.filter(childTag => childTag === "DONE");
+   let completionPercentage = Math.round(
+      (activeNestedDone?.length / activeNestedTasks?.length) * 100
+   );
+
    return (
       <div className="bg-white border-2 grid gap-2 p-3 rounded-xl">
-         <h1 className="font-bold text-xl">{root.tagText}</h1>
+         <div className="flex gap-2 items-center">
+            <h1 className="font-bold text-xl">{root.tagText}</h1>
+            {completionPercentage < 100 && (
+               <Completion value={completionPercentage} />
+            )}
+         </div>
          {root.text && <Text>{root.text}</Text>}
          {root?.children &&
             root.children.map(child => (
@@ -161,8 +173,8 @@ function Task({ root, onChange }) {
          }`}
       >
          <div className="flex gap-2 items-center">
-            <div className="flex gap-2 items-center" onClick={toggleStatus}>
-               <Checkbox checked={done} />
+            <div className="flex gap-2 items-center">
+               <Checkbox checked={done} onClick={toggleStatus} />
                <h1 className="font-bold text-lg break-words">{root.tagText}</h1>
             </div>
             {completionPercentage < 100 && (
