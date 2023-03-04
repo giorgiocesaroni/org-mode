@@ -133,7 +133,7 @@ function Document({ root, onChange }) {
             )}
          </div>
 
-         {open && (
+         {open && (root?.text || root?.children?.length > 0) && (
             <div className="grid gap-2">
                {root.text && <Text>{root.text}</Text>}
                {root?.children &&
@@ -254,7 +254,7 @@ function Completion({ value }) {
    return (
       <div>
          {!isNaN(value) && (
-            <span className="border-2 rounded-xl text-gray-500 px-2">
+            <span className="border-2 border-orange-500 rounded-xl text-orange-500 px-2">
                {value}%
             </span>
          )}
