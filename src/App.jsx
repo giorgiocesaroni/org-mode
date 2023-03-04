@@ -199,7 +199,10 @@ function Task({ root, onChange }) {
                <Checkbox checked={done} onClick={toggleStatus} />
                <h1
                   onClick={() => setOpen(prev => !prev)}
-                  className="font-bold text-lg"
+                  className={
+                     "font-bold text-lg" +
+                     (todo ? " text-orange-500" : " text-gray-500")
+                  }
                >
                   {root.tagText}
                </h1>
@@ -210,7 +213,7 @@ function Task({ root, onChange }) {
          </div>
 
          {open && (
-            <div className="grid gap-2">
+            <>
                {(root.schedule || root.deadline) && (
                   <div className="grid gap-2 grid-cols-2">
                      {root.schedule && (
@@ -241,7 +244,7 @@ function Task({ root, onChange }) {
                         onChange={onChange}
                      />
                   ))}
-            </div>
+            </>
          )}
       </div>
    );
