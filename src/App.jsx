@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import getParsed from "./api/getParsed";
 import getStringify from "./api/getStringify";
-import { timeForPicker } from "./utils/timeForPicker";
 import { dateForPicker } from "./utils/dateForPicker";
 import { remainingDays } from "./utils/remainingDays";
+import { remainingHours } from "./utils/remainingHours";
+import { remainingMinutes } from "./utils/remainingMinutes";
 
 function App() {
    const [text, setText] = useState(localStorage.getItem("text") ?? "");
@@ -305,11 +306,24 @@ function Schedule({ schedule, onChange, disabled }) {
 function Deadline({ deadline, onChange, disabled }) {
    const date = deadline ? new Date(deadline) : new Date();
    const daysLeft = remainingDays(deadline);
+   console.log({ daysLeft });
+   const hoursLeft = remainingHours(deadline);
+   const minutesLeft = remainingMinutes(deadline) - hoursLeft * 60;
+
+   let title = "Deadline";
+
+   if (daysLeft > 1) title += ` in ${daysLeft} days`;
+   else if (daysLeft == 1) title += " tomorrow";
+   else if (daysLeft == 0) {
+      if (hoursLeft > 0) title += ` in ${hoursLeft} h ${minutesLeft} min`;
+      else if (minutesLeft > 0) title += ` in ${minutesLeft} min`;
+      else title += " past due";
+   } else title += " past due";
 
    return (
       <DateTime
          disabled={disabled}
-         title={`Deadline${daysLeft >= 0 ? ` in ${daysLeft} days` : ""}`}
+         title={title}
          className="bg-orange-500"
          date={date}
          onChange={onChange}
