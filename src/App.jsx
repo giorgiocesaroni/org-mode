@@ -6,6 +6,8 @@ import { remainingDays } from "./utils/remainingDays";
 import { remainingHours } from "./utils/remainingHours";
 import { remainingMinutes } from "./utils/remainingMinutes";
 
+const REFRESH_RATE = 15000;
+
 function App() {
    const [text, setText] = useState(localStorage.getItem("text") ?? "");
    const [parsed, setParsed] = useState(null);
@@ -304,19 +306,29 @@ function Schedule({ schedule, onChange, disabled }) {
 }
 
 function Deadline({ deadline, onChange, disabled }) {
-   const date = deadline ? new Date(deadline) : new Date();
+   const [date, setDate] = useState(new Date());
+   deadline = deadline ? new Date(deadline) : new Date();
    const daysLeft = remainingDays(deadline);
-   console.log({ daysLeft });
    const hoursLeft = remainingHours(deadline);
    const minutesLeft = remainingMinutes(deadline) - hoursLeft * 60;
 
+   useEffect(() => {
+      const intervalId = setInterval(() => {
+         console.log("Component refreshing");
+         setDate(new Date());
+      }, REFRESH_RATE);
+
+      return () => clearInterval(intervalId);
+   }, []);
+
    let title = "Deadline";
 
+   // Deadline title logic
    if (daysLeft > 1) title += ` in ${daysLeft} days`;
    else if (daysLeft == 1) title += " tomorrow";
    else if (daysLeft == 0) {
       if (hoursLeft > 0) title += ` in ${hoursLeft} h ${minutesLeft} min`;
-      else if (minutesLeft > 0) title += ` in ${minutesLeft} min`;
+      else if (minutesLeft >= 0) title += ` in ${minutesLeft} min`;
       else title += " past due";
    } else title += " past due";
 
@@ -325,7 +337,7 @@ function Deadline({ deadline, onChange, disabled }) {
          disabled={disabled}
          title={title}
          className="bg-orange-500"
-         date={date}
+         date={deadline}
          onChange={onChange}
       />
    );
